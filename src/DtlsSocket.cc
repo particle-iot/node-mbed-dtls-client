@@ -208,7 +208,8 @@ int DtlsSocket::send_encrypted(const unsigned char *buf, size_t len) {
 	v8::Local<v8::Value> argv[] = {
 		Nan::CopyBuffer((char *)buf, len).ToLocalChecked()
 	};
-	send_cb->Call(1, argv);
+	v8::Local<v8::Function> sendCallbackDirect = send_cb->GetFunction();
+	sendCallbackDirect->Call(Nan::GetCurrentContext()->Global(), 1, argv);
 	return len;
 }
 
@@ -272,13 +273,7 @@ int DtlsSocket::step() {
 			}
 			// keep looping to send everything
 			continue;
-		}
-		// else if (ret == MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED) {
-		// 	// client will start a new session, so reset things
-		// 	reset();
-		// 	continue;
-		// }
-		else if (ret != 0) {
+		} else if (ret != 0) {
 			// bad things
 			error(ret);			
 			return 0;
@@ -286,7 +281,8 @@ int DtlsSocket::step() {
 	}
 
 	// this should only be called once when we first finish the handshake
-	handshake_cb->Call(0, NULL);
+	v8::Local<v8::Function> handshakeCallbackDirect = handshake_cb->GetFunction();
+	handshakeCallbackDirect->Call(Nan::GetCurrentContext()->Global(), 0, NULL);
 	return 0;
 }
 
@@ -303,7 +299,8 @@ void DtlsSocket::error(int ret) {
 		Nan::New(ret),
 		Nan::New(error_buf).ToLocalChecked()
 	};
-	error_cb->Call(2, argv);
+	v8::Local<v8::Function> errorCallbackDirect = error_cb->GetFunction();
+	errorCallbackDirect->Call(Nan::GetCurrentContext()->Global(), 2, argv);
 }
 
 void DtlsSocket::store_data(const unsigned char *buf, size_t len) {
