@@ -129,17 +129,17 @@ DtlsSocket::DtlsSocket(const unsigned char *pub_key,
 	const char *pers = "dtls_client";
 
 	mbedtls_ssl_init(&ssl_context);
-  mbedtls_ssl_config_init(&conf);
-  mbedtls_x509_crt_init(&clicert);
-  mbedtls_pk_init(&pkey);
-  mbedtls_entropy_init(&entropy);
-  mbedtls_ctr_drbg_init(&ctr_drbg);
+	mbedtls_ssl_config_init(&conf);
+	mbedtls_x509_crt_init(&clicert);
+	mbedtls_pk_init(&pkey);
+	mbedtls_entropy_init(&entropy);
+	mbedtls_ctr_drbg_init(&ctr_drbg);
 
 #if defined(MBEDTLS_DEBUG_C)
 	mbedtls_debug_set_threshold(debug_level);
 #endif
 
-  ret = mbedtls_pk_parse_public_key(&pkey,
+	ret = mbedtls_pk_parse_public_key(&pkey,
 																		(const unsigned char *)pub_key,
 																		pub_key_len);
 	if (ret != 0) goto exit;
@@ -151,14 +151,14 @@ DtlsSocket::DtlsSocket(const unsigned char *pub_key,
 														 0);
 	if (ret != 0) goto exit;
 
-  ret = mbedtls_ctr_drbg_seed(&ctr_drbg,
+	ret = mbedtls_ctr_drbg_seed(&ctr_drbg,
 															mbedtls_entropy_func,
 															&entropy,
 															(const unsigned char *) pers,
 															strlen(pers));
-  if (ret != 0) goto exit;
+	if (ret != 0) goto exit;
 
-  ret = mbedtls_ssl_config_defaults(&conf,
+	ret = mbedtls_ssl_config_defaults(&conf,
 																		MBEDTLS_SSL_IS_CLIENT,
 																		MBEDTLS_SSL_TRANSPORT_DATAGRAM,
 																		MBEDTLS_SSL_PRESET_DEFAULT);
@@ -177,20 +177,20 @@ DtlsSocket::DtlsSocket(const unsigned char *pub_key,
 	mbedtls_ssl_conf_server_certificate_types(&conf, ssl_cert_types);
 	mbedtls_ssl_conf_certificate_receive(&conf, MBEDTLS_SSL_RECEIVE_CERTIFICATE_DISABLED);
 
-  if((ret = mbedtls_ssl_setup(&ssl_context, &conf)) != 0) goto exit;
+	if((ret = mbedtls_ssl_setup(&ssl_context, &conf)) != 0) goto exit;
 
-  
-  if((ssl_context.session_negotiate->peer_cert = (mbedtls_x509_crt*)calloc(1,
-                    sizeof(mbedtls_x509_crt))) == NULL)
-  {
-      ret = MBEDTLS_ERR_SSL_ALLOC_FAILED;
-      goto exit;
-  }
-  mbedtls_x509_crt_init(ssl_context.session_negotiate->peer_cert);
-  ret = mbedtls_pk_parse_public_key(&ssl_context.session_negotiate->peer_cert->pk,
+	
+	if((ssl_context.session_negotiate->peer_cert = (mbedtls_x509_crt*)calloc(1,
+										sizeof(mbedtls_x509_crt))) == NULL)
+	{
+			ret = MBEDTLS_ERR_SSL_ALLOC_FAILED;
+			goto exit;
+	}
+	mbedtls_x509_crt_init(ssl_context.session_negotiate->peer_cert);
+	ret = mbedtls_pk_parse_public_key(&ssl_context.session_negotiate->peer_cert->pk,
 																		(const unsigned char *)peer_pub_key,
 																		peer_pub_key_len);
-  if (ret != 0) goto exit;
+	if (ret != 0) goto exit;
 
 	mbedtls_ssl_set_timer_cb(&ssl_context,
 													 &timer,
