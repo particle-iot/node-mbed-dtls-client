@@ -1,0 +1,29 @@
+{
+  "name": "node-mbed-dtls-client",
+  "version": "1.0.0",
+  "description": "DTLS client created by wrapping mbedtls",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install": "node-gyp rebuild",
+    "build": "node-gyp build",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spark/node-mbed-dtls-client.git"
+  },
+  "author": "Bryce Kahle <bryce@particle.io>",
+  "license": "Apache-2.0",
+  "gypfile": true,
+  "bugs": {
+    "url": "https://github.com/spark/node-mbed-dtls-client/issues"
+  },
+  "homepage": "https://github.com/spark/node-mbed-dtls-client#readme",
+  "engines": {
+    "node": ">=4.0.0"
+  },
+  "dependencies": {
+    "nan": "^2.1.0"
+  }
+}
