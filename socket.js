@@ -24,7 +24,7 @@ class DtlsSocket extends stream.Duplex {
 			this._end();
 		});
 		this.dgramSocket.once('close', () => {
-			this._end();
+			this._socketClosed();
 		});
 
 		const publicKey = Buffer.isBuffer(options.cert) ? options.cert : fs.readFileSync(options.cert);
@@ -72,12 +72,20 @@ class DtlsSocket extends stream.Duplex {
 				this._sendCallback(new Error('no underlying socket'));
 				this._sendCallback = null;
 			}
+			if (this._sendNotify) {
+				process.nextTick(() => {
+					this._closeSocket();
+				});
+			}
 			return;
 		}
 		this.dgramSocket.send(msg, 0, msg.length, this.remotePort, this.remoteAddress, err => {
 			if (this._sendCallback) {
 				this._sendCallback(err);
 				this._sendCallback = null;
+			}
+			if (this._sendNotify) {
+				this._closeSocket();
 			}
 		});
 	}
@@ -99,23 +107,41 @@ class DtlsSocket extends stream.Duplex {
 	}
 
 	end() {
-		this._clientEnd = true;
+		this._sendNotify = true;
 		this._end();
 	}
 
 	_end() {
-		this.dgramSocket.removeListener('message', this._onMessage);
+		if (this._ending) {
+			return;
+		}
+		this._ending = true;
+
+		if (this.dgramSocket) {
+			this.dgramSocket.removeListener('message', this._onMessage);
+		}
+
 		super.end();
 		this.push(null);
+
 		this.mbedSocket.close();
 		this.mbedSocket = null;
-		if (!this._clientEnd) {
-			this._finishEnd();
+
+		if (!this._sendNotify) {
+			this._closeSocket();
 		}
 	}
 
-	_finishEnd() {
+	_closeSocket() {
+		if (!this.dgramSocket) {
+			this._socketClosed();
+			return;
+		}
+
 		this.dgramSocket.close();
+	}
+
+	_socketClosed() {
 		this.dgramSocket = null;
 		this.emit('close', this._hadError);
 		this.removeAllListeners();

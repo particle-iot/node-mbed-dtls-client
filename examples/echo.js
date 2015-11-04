@@ -38,6 +38,10 @@ clientSocket.on('error', (code, msg) => {
 });
 
 clientSocket.on('close', () => {
+	rl.close();
 	clientSocket = null;
-	process.exit(0);
+});
+
+process.on('SIGINT', () => {
+	clientSocket.end();
 });
