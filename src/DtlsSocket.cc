@@ -86,7 +86,13 @@ void DtlsSocket::ReceiveDataFromNode(const Nan::FunctionCallbackInfo<v8::Value>&
 
 void DtlsSocket::Close(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 	DtlsSocket *socket = Nan::ObjectWrap::Unwrap<DtlsSocket>(info.This());
-	socket->close();
+	int ret = socket->close();
+	if (ret < 0) {
+		// TODO error?
+		return;
+	}
+
+	info.GetReturnValue().Set(Nan::New(ret));
 }
 
 void DtlsSocket::Send(const Nan::FunctionCallbackInfo<v8::Value>& info) {
@@ -308,8 +314,11 @@ void DtlsSocket::store_data(const unsigned char *buf, size_t len) {
 	recv_len = len;
 }
 
-void DtlsSocket::close() {
-	mbedtls_ssl_close_notify(&ssl_context);
+int DtlsSocket::close() {
+	if(ssl_context.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
+		return 1;
+	}
+	return mbedtls_ssl_close_notify(&ssl_context);
 }
 
 DtlsSocket::~DtlsSocket() {

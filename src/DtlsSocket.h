@@ -34,7 +34,7 @@ public:
 	int send_encrypted(const unsigned char *buf, size_t len);
 	int send(const unsigned char *buf, size_t len);
 	int step();
-	void close();
+	int close();
 	void store_data(const unsigned char *buf, size_t len);
 	void error(int ret);
 
