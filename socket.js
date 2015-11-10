@@ -67,27 +67,27 @@ class DtlsSocket extends stream.Duplex {
 	}
 
 	_sendEncrypted(msg) {
-		if (!this.dgramSocket || !this.dgramSocket._handle) {
-			if (this._sendCallback) {
-				this._sendCallback(new Error('no underlying socket'));
-				this._sendCallback = null;
-			}
-			if (this._sendNotify) {
-				process.nextTick(() => {
-					this._closeSocket();
-				});
-			}
-			return;
-		}
-		this.dgramSocket.send(msg, 0, msg.length, this.remotePort, this.remoteAddress, err => {
-			if (this._sendCallback) {
-				this._sendCallback(err);
-				this._sendCallback = null;
+		// store the callback here because '_write' might be called
+		// again before the underlying socket finishes sending
+		const sendCb = this._sendCallback;
+		this._sendCallback = null;
+		const sendFinished = (err) => {
+			if (sendCb) {
+				sendCb(err);
 			}
 			if (this._sendNotify) {
 				this._closeSocket();
 			}
-		});
+		};
+
+		if (!this.dgramSocket || !this.dgramSocket._handle) {
+			process.nextTick(() => {
+				sendFinished(new Error('no underlying socket'));
+			});
+			return;
+		}
+
+		this.dgramSocket.send(msg, 0, msg.length, this.remotePort, this.remoteAddress, sendFinished);
 	}
 
 	_handshakeComplete() {
@@ -102,7 +102,12 @@ class DtlsSocket extends stream.Duplex {
 		}
 
 		this._hadError = true;
-		this.emit('error', code, msg);
+		if (this._sendCallback) {
+			this._sendCallback(code);
+			this._sendCallback = null;
+		} else {
+			this.emit('error', code, msg);
+		}
 		this._end();
 	}
 
