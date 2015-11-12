@@ -1,3 +1,7 @@
+# 1.0.4
+
+* Update mbedtls that plays nice with GCC
+
 # 1.0.3
 
 * Return `int` from `DtlsSocket::close` that indicates when a close alert will not be sent.
