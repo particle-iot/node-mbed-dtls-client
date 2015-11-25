@@ -27,11 +27,10 @@ class DtlsSocket extends stream.Duplex {
 			this._socketClosed();
 		});
 
-		const publicKey = Buffer.isBuffer(options.cert) ? options.cert : fs.readFileSync(options.cert);
 		const privateKey = Buffer.isBuffer(options.key) ? options.key : fs.readFileSync(options.key);
 		const peerPublicKey = Buffer.isBuffer(options.peerPublicKey) ? options.peerPublicKey : fs.readFileSync(options.peerPublicKey);
 
-		this.mbedSocket = new mbed.DtlsSocket(publicKey, privateKey, peerPublicKey,
+		this.mbedSocket = new mbed.DtlsSocket(privateKey, peerPublicKey,
 			this._sendEncrypted.bind(this),
 			this._handshakeComplete.bind(this),
 			this._error.bind(this),
