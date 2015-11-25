@@ -1,3 +1,7 @@
+# 2.0.1
+
+* Fix usage of public key
+
 # 2.0.0
 
 * Remove public key argument
