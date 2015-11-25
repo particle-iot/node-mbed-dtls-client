@@ -13,7 +13,6 @@ const dtls = require('../index.js');
 const options = {
 	host: process.argv[2] || 'localhost',
 	port: process.argv[3] || 5683,
-	cert: path.join(__dirname, '../test/public.der'),
 	key: path.join(__dirname, '../test/private.der'),
 	peerPublicKey: path.join(__dirname, '../test/serverPublicKey.der'),
 	debug: 5

@@ -1,3 +1,7 @@
+# 2.0.0
+
+* Remove public key argument
+
 # 1.0.4
 
 * Update mbedtls that plays nice with GCC
