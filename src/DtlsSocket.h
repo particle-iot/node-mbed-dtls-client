@@ -19,9 +19,7 @@ public:
 	static void Close(const Nan::FunctionCallbackInfo<v8::Value>& info);
 	static void Send(const Nan::FunctionCallbackInfo<v8::Value>& info);
 	static void Connect(const Nan::FunctionCallbackInfo<v8::Value>& info);
-	DtlsSocket(const unsigned char *pub_key,
-						 size_t pub_key_len,
-						 const unsigned char *priv_key,
+	DtlsSocket(const unsigned char *priv_key,
 						 size_t priv_key_len,
 						 const unsigned char *peer_pub_key,
 						 size_t peer_pub_key_len,

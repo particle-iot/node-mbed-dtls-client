@@ -42,26 +42,22 @@ DtlsSocket::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
 }
 
 void DtlsSocket::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-	
-	size_t pub_key_len = Buffer::Length(info[0]);
-	size_t priv_key_len = Buffer::Length(info[1]);
-	size_t peer_pub_key_len = Buffer::Length(info[2]);
+	size_t priv_key_len = Buffer::Length(info[0]);
+	size_t peer_pub_key_len = Buffer::Length(info[1]);
 
-	const unsigned char *pub_key = (const unsigned char *)Buffer::Data(info[0]);
-	const unsigned char *priv_key = (const unsigned char *)Buffer::Data(info[1]);
-	const unsigned char *peer_pub_key = (const unsigned char *)Buffer::Data(info[2]);
+	const unsigned char *priv_key = (const unsigned char *)Buffer::Data(info[0]);
+	const unsigned char *peer_pub_key = (const unsigned char *)Buffer::Data(info[1]);
 
-	Nan::Callback* send_cb = new Nan::Callback(info[3].As<v8::Function>());
-	Nan::Callback* hs_cb = new Nan::Callback(info[4].As<v8::Function>());
-	Nan::Callback* error_cb = new Nan::Callback(info[5].As<v8::Function>());
+	Nan::Callback* send_cb = new Nan::Callback(info[2].As<v8::Function>());
+	Nan::Callback* hs_cb = new Nan::Callback(info[3].As<v8::Function>());
+	Nan::Callback* error_cb = new Nan::Callback(info[4].As<v8::Function>());
 
 	int debug_level = 0;
-	if (info.Length() > 6) {
-		debug_level = info[6]->Uint32Value();
+	if (info.Length() > 5) {
+		debug_level = info[5]->Uint32Value();
 	}
 
 	DtlsSocket *socket = new DtlsSocket(
-		pub_key, pub_key_len,
 		priv_key, priv_key_len,
 		peer_pub_key, peer_pub_key_len,
 		send_cb, hs_cb, error_cb,
@@ -117,9 +113,7 @@ int net_recv( void *ctx, unsigned char *buf, size_t len ) {
 	return socket->recv(buf, len);
 }
 
-DtlsSocket::DtlsSocket(const unsigned char *pub_key,
-											 size_t pub_key_len,
-											 const unsigned char *priv_key,
+DtlsSocket::DtlsSocket(const unsigned char *priv_key,
 											 size_t priv_key_len,
 											 const unsigned char *peer_pub_key,
 											 size_t peer_pub_key_len,
@@ -145,11 +139,6 @@ DtlsSocket::DtlsSocket(const unsigned char *pub_key,
 	mbedtls_debug_set_threshold(debug_level);
 #endif
 
-	ret = mbedtls_pk_parse_public_key(&pkey,
-																		(const unsigned char *)pub_key,
-																		pub_key_len);
-	if (ret != 0) goto exit;
-	
 	ret = mbedtls_pk_parse_key(&pkey,
 														 (const unsigned char *)priv_key,
 														 priv_key_len,
