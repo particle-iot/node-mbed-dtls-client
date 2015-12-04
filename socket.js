@@ -41,6 +41,10 @@ class DtlsSocket extends stream.Duplex {
 		});
 	}
 
+	bind(port, address, callback) {
+		this.dgramSocket.bind(port, address, callback);
+	}
+
 	address() {
 		return this.dgramSocket.address();
 	}
