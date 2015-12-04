@@ -1,3 +1,9 @@
+# 2.0.2
+
+* Allow custom socket binding
+* Remove test certs
+* Increase max content size
+
 # 2.0.1
 
 * Fix usage of public key
