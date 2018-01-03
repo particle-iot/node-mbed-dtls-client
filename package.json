@@ -11,15 +11,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/spark/node-mbed-dtls-client.git"
+    "url": "git+https://github.com/particle-iot/node-mbed-dtls-client.git"
   },
   "author": "Bryce Kahle <bryce@particle.io>",
   "license": "Apache-2.0",
   "gypfile": true,
   "bugs": {
-    "url": "https://github.com/spark/node-mbed-dtls-client/issues"
+    "url": "https://github.com/particle-iot/node-mbed-dtls-client/issues"
   },
-  "homepage": "https://github.com/spark/node-mbed-dtls-client#readme",
+  "homepage": "https://github.com/particle-iot/node-mbed-dtls-client#readme",
   "engines": {
     "node": ">=4.0.0"
   },
