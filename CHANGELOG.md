@@ -1,3 +1,7 @@
+# 2.0.3
+
+* updating to use newer particle mbedtls fork - particle-mbedtls-2.4.2
+
 # 2.0.2
 
 * Allow custom socket binding
