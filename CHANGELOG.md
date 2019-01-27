@@ -1,6 +1,6 @@
-# 2.0.3
+# 2.1.0
 
-* updating to use newer particle mbedtls fork - particle-mbedtls-2.9.0
+* updating mbedtls submodule to 2.9.0
 
 # 2.0.2
 
