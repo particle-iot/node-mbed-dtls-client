@@ -1,3 +1,7 @@
+# 2.1.0
+
+* updating mbedtls submodule to 2.9.0
+
 # 2.0.2
 
 * Allow custom socket binding
