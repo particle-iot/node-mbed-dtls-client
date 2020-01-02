@@ -15,11 +15,7 @@
         "mbedtls/library/ssl_tls.c"
       ],
       "include_dirs": [
-        "mbedtls/include",
-        "config"
-      ],
-      "defines": [
-        "MBEDTLS_CONFIG_FILE=\"config-ecc-ccm-rpk-dtls1_2.h\""
+        "mbedtls/include"
       ]
     },
     {
@@ -37,11 +33,7 @@
         "mbedtls/library/x509write_csr.c"
       ],
       "include_dirs": [
-        "mbedtls/include",
-        "config"
-      ],
-      "defines": [
-        "MBEDTLS_CONFIG_FILE=\"config-ecc-ccm-rpk-dtls1_2.h\""
+        "mbedtls/include"
       ]
     },
     {
@@ -101,11 +93,7 @@
         "mbedtls/library/xtea.c"
       ],
       "include_dirs": [
-        "mbedtls/include",
-        "config"
-      ],
-      "defines": [
-        "MBEDTLS_CONFIG_FILE=\"config-ecc-ccm-rpk-dtls1_2.h\""
+        "mbedtls/include"
       ]
     },
     {
@@ -123,9 +111,6 @@
         "mbedtls",
         "mbedx509",
         "mbedcrypto"
-      ],
-      "defines": [
-        "MBEDTLS_CONFIG_FILE=\"config-ecc-ccm-rpk-dtls1_2.h\""
       ]
     }
   ]
