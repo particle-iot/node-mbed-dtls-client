@@ -15,7 +15,13 @@ class DtlsSocket extends stream.Duplex {
 
 		this.remoteAddress = options.host;
 		this.remotePort = options.port;
-		this.dgramSocket = options.socket || dgram.createSocket('udp4');
+		if(options.socket) {
+			this.dgramSocket = options.socket;
+			this.dontCloseDgramSocket = true;
+		} else {
+			this.dgramSocket = dgram.createSocket('udp4');
+			this.dontCloseDgramSocket = false;
+		}
 
 		this._onMessage = this._onMessage.bind(this);
 		this.dgramSocket.on('message', this._onMessage);
@@ -149,7 +155,10 @@ class DtlsSocket extends stream.Duplex {
 			return;
 		}
 
-		this.dgramSocket.close();
+		// Only close the dgramSocket if we generated it.
+		if(!this.dontCloseDgramSocket) {
+			this.dgramSocket.close();
+		}
 	}
 
 	_socketClosed() {
