@@ -159,6 +159,8 @@ class DtlsSocket extends stream.Duplex {
 		if(!this.dontCloseDgramSocket) {
 			this.dgramSocket.close();
 		}
+
+		this.emit('close', this._hadError);
 	}
 
 	_socketClosed() {
