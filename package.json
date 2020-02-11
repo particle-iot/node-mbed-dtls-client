@@ -1,6 +1,6 @@
 {
   "name": "node-mbed-dtls-client",
-  "version": "2.1.1",
+  "version": "3.0.0",
   "description": "DTLS client created by wrapping mbedtls",
   "main": "index.js",
   "scripts": {
@@ -11,15 +11,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/spark/node-mbed-dtls-client.git"
+    "url": "git+https://github.com/k4connect/node-mbed-dtls-client.git"
   },
   "author": "Bryce Kahle <bryce@particle.io>",
+  "contributors": [
+    "Kyle Strickland <kyle@k4connect.com>"
+  ],
   "license": "Apache-2.0",
   "gypfile": true,
   "bugs": {
-    "url": "https://github.com/spark/node-mbed-dtls-client/issues"
+    "url": "https://github.com/k4connect/node-mbed-dtls-client/issues"
   },
-  "homepage": "https://github.com/spark/node-mbed-dtls-client#readme",
+  "homepage": "https://github.com/k4connect/node-mbed-dtls-client#readme",
   "engines": {
     "node": ">=4.0.0"
   },

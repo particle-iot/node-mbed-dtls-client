@@ -42,24 +42,30 @@ DtlsSocket::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
 }
 
 void DtlsSocket::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-	size_t priv_key_len = Buffer::Length(info[0]);
-	size_t peer_pub_key_len = Buffer::Length(info[1]);
+	size_t priv_key_len = !info[0]->IsNullOrUndefined() ? Buffer::Length(info[0]) : 0;
+	size_t peer_pub_key_len = !info[1]->IsNullOrUndefined() ? Buffer::Length(info[1]) : 0;
+	size_t psk_len = !info[2]->IsNullOrUndefined() ? Buffer::Length(info[2]) : 0;
+	size_t psk_identity_len = !info[3]->IsNullOrUndefined() ? Buffer::Length(info[3]) : 0;
 
-	const unsigned char *priv_key = (const unsigned char *)Buffer::Data(info[0]);
-	const unsigned char *peer_pub_key = (const unsigned char *)Buffer::Data(info[1]);
+	const unsigned char *priv_key = !info[0]->IsNullOrUndefined() ? (const unsigned char *)Buffer::Data(info[0]) : NULL;
+	const unsigned char *peer_pub_key =  !info[1]->IsNullOrUndefined() ? (const unsigned char *)Buffer::Data(info[2]) : NULL;
+	const unsigned char *psk = !info[2]->IsNullOrUndefined() ? (const unsigned char *)Buffer::Data(info[2]) : NULL;
+	const unsigned char *psk_identity = !info[3]->IsNullOrUndefined() ? (const unsigned char *)Buffer::Data(info[3]) : NULL;
 
-	Nan::Callback* send_cb = new Nan::Callback(info[2].As<v8::Function>());
-	Nan::Callback* hs_cb = new Nan::Callback(info[3].As<v8::Function>());
-	Nan::Callback* error_cb = new Nan::Callback(info[4].As<v8::Function>());
+	Nan::Callback* send_cb = new Nan::Callback(info[4].As<v8::Function>());
+	Nan::Callback* hs_cb = new Nan::Callback(info[5].As<v8::Function>());
+	Nan::Callback* error_cb = new Nan::Callback(info[6].As<v8::Function>());
 
 	int debug_level = 0;
-	if (info.Length() > 5) {
-		debug_level = info[5]->Uint32Value();
+	if (info.Length() > 7) {
+		debug_level = info[7]->Uint32Value();
 	}
 
 	DtlsSocket *socket = new DtlsSocket(
 		priv_key, priv_key_len,
 		peer_pub_key, peer_pub_key_len,
+		psk, psk_len,
+		psk_identity, psk_identity_len,
 		send_cb, hs_cb, error_cb,
 		debug_level);
 	socket->Wrap(info.This());
@@ -117,6 +123,10 @@ DtlsSocket::DtlsSocket(const unsigned char *priv_key,
 											 size_t priv_key_len,
 											 const unsigned char *peer_pub_key,
 											 size_t peer_pub_key_len,
+											 const unsigned char *psk,
+											 size_t psk_len,
+											 const unsigned char *psk_identity,
+											 size_t psk_identity_len,
 											 Nan::Callback* send_callback,
 											 Nan::Callback* hs_callback,
 											 Nan::Callback* error_callback,
@@ -127,6 +137,9 @@ DtlsSocket::DtlsSocket(const unsigned char *priv_key,
 		handshake_cb(hs_callback) {
 	int ret;
 	const char *pers = "dtls_client";
+
+	recv_len = 0;
+	recv_buf = NULL;
 
 	mbedtls_ssl_init(&ssl_context);
 	mbedtls_ssl_config_init(&conf);
@@ -139,12 +152,14 @@ DtlsSocket::DtlsSocket(const unsigned char *priv_key,
 	mbedtls_debug_set_threshold(debug_level);
 #endif
 
-	ret = mbedtls_pk_parse_key(&pkey,
-														 (const unsigned char *)priv_key,
-														 priv_key_len,
-														 NULL,
-														 0);
-	if (ret != 0) goto exit;
+	if(priv_key != NULL) {
+		ret = mbedtls_pk_parse_key(&pkey,
+															(const unsigned char *)priv_key,
+															priv_key_len,
+															NULL,
+															0);
+		if (ret != 0) goto exit;
+	}
 
 	ret = mbedtls_ctr_drbg_seed(&ctr_drbg,
 															mbedtls_entropy_func,
@@ -158,13 +173,18 @@ DtlsSocket::DtlsSocket(const unsigned char *priv_key,
 																		MBEDTLS_SSL_TRANSPORT_DATAGRAM,
 																		MBEDTLS_SSL_PRESET_DEFAULT);
 	if (ret != 0) goto exit;
-	mbedtls_ssl_conf_min_version(&conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3);
+	mbedtls_ssl_conf_min_version(&conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_2);
 
 	mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
 	mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
 
-	ret = mbedtls_ssl_conf_own_cert(&conf, &clicert, &pkey);
-	if (ret != 0) goto exit;
+	if(priv_key != NULL) {
+		ret = mbedtls_ssl_conf_own_cert(&conf, &clicert, &pkey);
+		if (ret != 0) goto exit;
+	} else if(psk != NULL) {
+		ret = mbedtls_ssl_conf_psk(&conf, psk, psk_len, psk_identity, psk_identity_len);
+		if (ret != 0) goto exit;
+	}
 
 	mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
 	static int ssl_cert_types[] = { MBEDTLS_TLS_CERT_TYPE_RAW_PUBLIC_KEY, MBEDTLS_TLS_CERT_TYPE_NONE };
@@ -174,18 +194,19 @@ DtlsSocket::DtlsSocket(const unsigned char *priv_key,
 
 	if((ret = mbedtls_ssl_setup(&ssl_context, &conf)) != 0) goto exit;
 
-	
-	if((ssl_context.session_negotiate->peer_cert = (mbedtls_x509_crt*)calloc(1,
-										sizeof(mbedtls_x509_crt))) == NULL)
-	{
-			ret = MBEDTLS_ERR_SSL_ALLOC_FAILED;
-			goto exit;
+	if(peer_pub_key != NULL) {
+		if((ssl_context.session_negotiate->peer_cert = (mbedtls_x509_crt*)calloc(1,
+											sizeof(mbedtls_x509_crt))) == NULL)
+		{
+				ret = MBEDTLS_ERR_SSL_ALLOC_FAILED;
+				goto exit;
+		}
+		mbedtls_x509_crt_init(ssl_context.session_negotiate->peer_cert);
+		ret = mbedtls_pk_parse_public_key(&ssl_context.session_negotiate->peer_cert->pk,
+																			(const unsigned char *)peer_pub_key,
+																			peer_pub_key_len);
+		if (ret != 0) goto exit;
 	}
-	mbedtls_x509_crt_init(ssl_context.session_negotiate->peer_cert);
-	ret = mbedtls_pk_parse_public_key(&ssl_context.session_negotiate->peer_cert->pk,
-																		(const unsigned char *)peer_pub_key,
-																		peer_pub_key_len);
-	if (ret != 0) goto exit;
 
 	mbedtls_ssl_set_timer_cb(&ssl_context,
 													 &timer,
@@ -252,26 +273,18 @@ int DtlsSocket::receive_data(unsigned char *buf, int len) {
 int DtlsSocket::step() {
 	int ret;
 	// handshake
-	while (ssl_context.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
-		ret = mbedtls_ssl_handshake_step(&ssl_context);
-		if (ret == 0) {
-			// in these states we are waiting for more input
-			if (
-				ssl_context.state == MBEDTLS_SSL_SERVER_HELLO ||
-				ssl_context.state == MBEDTLS_SSL_SERVER_KEY_EXCHANGE ||
-				ssl_context.state == MBEDTLS_SSL_CERTIFICATE_REQUEST ||
-				ssl_context.state == MBEDTLS_SSL_SERVER_HELLO_DONE ||
-				ssl_context.state == MBEDTLS_SSL_SERVER_CHANGE_CIPHER_SPEC ||
-				ssl_context.state == MBEDTLS_SSL_SERVER_FINISHED
-				) {
+	if (ssl_context.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
+		ret = mbedtls_ssl_handshake(&ssl_context);
+		switch (ret) {
+			case 0:
+				break;
+			case MBEDTLS_ERR_SSL_WANT_READ:
+			case MBEDTLS_ERR_SSL_WANT_WRITE:
+				return ret;
+			default:
+				// bad things
+				error(ret);
 				return 0;
-			}
-			// keep looping to send everything
-			continue;
-		} else if (ret != 0) {
-			// bad things
-			error(ret);			
-			return 0;
 		}
 	}
 
