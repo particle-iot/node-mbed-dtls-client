@@ -74,6 +74,11 @@ class DtlsSocket extends stream.Duplex {
 	}
 
 	_write(chunk, encoding, callback) {
+		if (!this.mbedSocket) {
+			callback(new Error('Cannot write to socket that no longer exists.'));
+			return;
+		}
+
 		this._sendCallback = callback;
 		this.mbedSocket.send(chunk);
 	}
