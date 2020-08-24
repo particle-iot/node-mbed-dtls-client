@@ -37,8 +37,12 @@ DtlsSocket::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
 	Nan::SetPrototypeMethod(ctor, "close", Close);
 	Nan::SetPrototypeMethod(ctor, "send", Send);
 	Nan::SetPrototypeMethod(ctor, "connect", Connect);
-	
-	Nan::Set(target, Nan::New("DtlsSocket").ToLocalChecked(), ctor->GetFunction());
+
+	Nan::Set(
+		target,
+		Nan::New("DtlsSocket").ToLocalChecked(),
+		Nan::GetFunction(ctor).ToLocalChecked()
+	);
 }
 
 void DtlsSocket::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
@@ -58,7 +62,10 @@ void DtlsSocket::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 
 	int debug_level = 0;
 	if (info.Length() > 7) {
-		debug_level = info[7]->Uint32Value();
+		v8::Maybe<uint32_t> debug_level_maybe = info[7]->Uint32Value(Nan::GetCurrentContext());
+		if (debug_level_maybe.IsJust()) {
+			debug_level = debug_level_maybe.FromJust();
+		}
 	}
 
 	DtlsSocket *socket = new DtlsSocket(
@@ -78,7 +85,7 @@ void DtlsSocket::ReceiveDataFromNode(const Nan::FunctionCallbackInfo<v8::Value>&
 	socket->store_data(recv_data, Buffer::Length(info[0]));
 
 	int len = 1024;
-	unsigned char buf[len];	
+	unsigned char buf[len];
 	len = socket->receive_data(buf, len);
 
 	if (len > 0) {
@@ -99,7 +106,7 @@ void DtlsSocket::Close(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 
 void DtlsSocket::Send(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 	DtlsSocket *socket = Nan::ObjectWrap::Unwrap<DtlsSocket>(info.This());
-	
+
 	const unsigned char *send_data = (const unsigned char *)Buffer::Data(info[0]);
 	socket->send(send_data, Buffer::Length(info[0]));
 }
@@ -225,7 +232,12 @@ int DtlsSocket::send_encrypted(const unsigned char *buf, size_t len) {
 		Nan::CopyBuffer((char *)buf, len).ToLocalChecked()
 	};
 	v8::Local<v8::Function> sendCallbackDirect = send_cb->GetFunction();
-	sendCallbackDirect->Call(Nan::GetCurrentContext()->Global(), 1, argv);
+	Nan::Call(
+		sendCallbackDirect,
+		Nan::GetCurrentContext()->Global(),
+		1,
+		argv
+	);
 	return len;
 }
 
@@ -257,7 +269,7 @@ int DtlsSocket::receive_data(unsigned char *buf, int len) {
 	int ret;
 
 	if (ssl_context.state == MBEDTLS_SSL_HANDSHAKE_OVER) {
-		// normal reading of unencrypted data	
+		// normal reading of unencrypted data
 		memset(buf, 0, len);
 		ret = mbedtls_ssl_read(&ssl_context, buf, len);
 		if (ret <= 0) {
@@ -290,7 +302,12 @@ int DtlsSocket::step() {
 
 	// this should only be called once when we first finish the handshake
 	v8::Local<v8::Function> handshakeCallbackDirect = handshake_cb->GetFunction();
-	handshakeCallbackDirect->Call(Nan::GetCurrentContext()->Global(), 0, NULL);
+	Nan::Call(
+		handshakeCallbackDirect,
+		Nan::GetCurrentContext()->Global(),
+		0,
+		NULL
+	);
 	return 0;
 }
 
@@ -308,7 +325,12 @@ void DtlsSocket::error(int ret) {
 		Nan::New(error_buf).ToLocalChecked()
 	};
 	v8::Local<v8::Function> errorCallbackDirect = error_cb->GetFunction();
-	errorCallbackDirect->Call(Nan::GetCurrentContext()->Global(), 2, argv);
+	Nan::Call(
+		errorCallbackDirect,
+		Nan::GetCurrentContext()->Global(),
+		2,
+		argv
+	);
 }
 
 void DtlsSocket::store_data(const unsigned char *buf, size_t len) {
